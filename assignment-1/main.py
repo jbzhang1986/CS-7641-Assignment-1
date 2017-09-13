@@ -15,3 +15,7 @@ args = parser.parse_args()
 # print something out!
 if not args.command:
     parser.print_help()
+
+command = args.command
+if command == 'stats':
+  pass
