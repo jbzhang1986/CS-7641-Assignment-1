@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 def create_final_datasets():
     ''' Munge the datasets
     '''
-    logger.info('Cleaning datasets')
     create_wine_dataset()
     create_credit_card_dataset()
     
