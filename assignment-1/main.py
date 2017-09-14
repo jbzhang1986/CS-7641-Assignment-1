@@ -4,9 +4,9 @@ The driver to the entire assignment
 '''
 import argparse
 import clean
+from knn import KNN
 import logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     # parse here
@@ -25,4 +25,4 @@ if __name__ == '__main__':
     if command == 'clean':
         clean.create_final_datasets()
     elif command == 'knn':
-        pass
+        KNN().run()        
