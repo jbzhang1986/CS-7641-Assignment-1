@@ -4,13 +4,18 @@ K-nearest neighbors
 '''
 import pandas as pd
 import logging 
+from experiment import Experiment
 logger = logging.getLogger(__name__)
 
-class KNN():
+class KNN(Experiment):
 
-  def __init__(self):
-      pass
+  def __init__(self, dataset=None, **kwargs):
+      ''' Construct the object
+      '''
+      super().__init__(dataset)
   
   def run(self):
-      logger.info(pd.read_csv('./data/wine-red-white-final.csv'))
+      ''' Run the experiment
+      '''
+      logger.info('Running experiment')
     

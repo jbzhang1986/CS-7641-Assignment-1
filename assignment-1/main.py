@@ -9,6 +9,10 @@ import logging
 import pandas as pd
 logging.basicConfig(level=logging.INFO)
 
+CLASSIFIERS = {
+  'knn': KNN
+}
+
 if __name__ == '__main__':
     # parse here
     parser = argparse.ArgumentParser(prog='main.py')
@@ -38,6 +42,6 @@ if __name__ == '__main__':
             log.info('Exploring credit card dataset')
             dataset = pd.read_csv('./data/credit-card-final.csv')
 
-        if command == 'knn':
-            log.info('Running KNN')
-            KNN().run()        
+        log.info('Running %s', command)
+        args.dataset = dataset
+        CLASSIFIERS[command](**vars(args)).run()        
