@@ -38,10 +38,17 @@ if __name__ == '__main__':
         if args.dataset == 'wine':
             log.info('Exploring wine dataset')
             dataset = pd.read_csv('./data/wine-red-white-final.csv')
+            class_target = 'red'
+            classifications = dataset[class_target]
+            attributes = dataset.drop(class_target, axis=1)
         else:
             log.info('Exploring credit card dataset')
             dataset = pd.read_csv('./data/credit-card-final.csv')
+            class_target = 'default_payment_next_month'
+            classifications = dataset[class_target]
+            attributes = dataset.drop(class_target, axis=1)
 
         log.info('Running %s', command)
-        args.dataset = dataset
+        args.classifications = classifications
+        args.attributes = attributes
         CLASSIFIERS[command](**vars(args)).run()        
