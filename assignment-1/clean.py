@@ -43,7 +43,7 @@ def create_credit_card_dataset():
     logger.info('Initial credit card information \n %s', credit_card.describe())
     logger.info('Sampling down to 10%')
     credit_card = credit_card.groupby('default_payment_next_month')
-    credit_card = credit_card.apply(pd.DataFrame.sample, frac=0.1).reset_index(drop=True)
+    credit_card = credit_card.apply(pd.DataFrame.sample, frac=0.1, random_state=0).reset_index(drop=True)
     logger.info('Final credit card information \n %s', credit_card.describe())
     logger.info('Writing final credit card csv to ./data/credit-card-final.csv')
     credit_card.to_csv('./data/credit-card-final.csv', index=False)
