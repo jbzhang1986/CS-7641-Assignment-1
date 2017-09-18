@@ -26,7 +26,7 @@ def create_wine_dataset():
     wine_white_final = wine_white.sample(wine_red.shape[0], random_state=0)
     wine_final = wine_red.append(wine_white_final)
     wine_final.columns = ['_'.join(col.split(' ')) for col in wine_final.columns]
-    logger.info('Final wine set information \n %s', wine_final.describe())
+    logger.info('Final wine set information \n %s', wine_final.describe(include='all'))
     logger.info('Writing final wine csv to ./data/wine-red-white-final.csv')
     wine_final.to_csv('./data/wine-red-white-final.csv', index=False)
 
@@ -44,6 +44,6 @@ def create_credit_card_dataset():
     logger.info('Sampling down to 10%')
     credit_card = credit_card.groupby('default_payment_next_month')
     credit_card = credit_card.apply(pd.DataFrame.sample, frac=0.1, random_state=0).reset_index(drop=True)
-    logger.info('Final credit card information \n %s', credit_card.describe())
+    logger.info('Final credit card information \n %s', credit_card.describe(include='all'))
     logger.info('Writing final credit card csv to ./data/credit-card-final.csv')
     credit_card.to_csv('./data/credit-card-final.csv', index=False)
