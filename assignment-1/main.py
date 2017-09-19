@@ -5,13 +5,15 @@ The driver to the entire assignment
 import argparse
 import clean
 from knn import KNN
+from svm import SVM
 import logging
 import pandas as pd
 import os
 logging.basicConfig(level=logging.INFO)
 
 CLASSIFIERS = {
-  'knn': KNN
+  'knn': KNN,
+  'svm': SVM
 }
 
 if __name__ == '__main__':
@@ -20,7 +22,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dataset', help='Which dataset to run on', choices=['wine', 'credit_card'], default='wine')
     subparsers = parser.add_subparsers(title='subcommands', dest='command')
     cleaner_parser = subparsers.add_parser('clean', help='Clean the stats from original to final and show me information')
-    knn_parser = subparsers.add_parser('knn', help='run k-nearest neighbors')
+    knn_parser = subparsers.add_parser('knn', help='Run k-nearest neighbors')
+    svm_parser = subparsers.add_parser('svm', help='Run Support Vector Machines')
     args = parser.parse_args()
 
     # print something out!

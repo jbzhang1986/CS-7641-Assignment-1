@@ -14,10 +14,9 @@ from time import process_time
 logger = logging.getLogger(__name__)
 
 def balanced_accuracy(truth,pred):
-    wts = compute_sample_weight('balanced',truth)
-    return accuracy_score(truth,pred,sample_weight=wts)
+    wts = compute_sample_weight('balanced', truth)
+    return accuracy_score(truth, pred, sample_weight=wts)
 scorer = make_scorer(balanced_accuracy) 
-
 
 class Experiment:
 
@@ -57,7 +56,6 @@ class Experiment:
           refit=True, verbose=self._verbose)
         logger.info('Searching params')
         cv.fit(x_train, y_train)
-        cv.set_params(predict__metric = 'manhattan', predict__n_neighbors= 4, predict__weights = 'uniform')
         cv_all = pd.DataFrame(cv.cv_results_)
         csv_str = '{}/{}/'.format(self._dataset, self._algorithm)
         cv_all.to_csv('./results/{}/cv.csv'.format(csv_str), index=False)

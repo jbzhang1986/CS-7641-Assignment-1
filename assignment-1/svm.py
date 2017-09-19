@@ -1,8 +1,7 @@
-'''knn.py
+'''svm.py
 
-K-nearest neighbors
+Support Vector Machines
 '''
-import pandas as pd
 import logging 
 import numpy as np
 from experiment import Experiment
@@ -11,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 logger = logging.getLogger(__name__)
 
-class KNN(Experiment):
+class SVM(Experiment):
 
   def __init__(self, attributes, classifications, dataset, **kwargs):
       ''' Construct the object
@@ -22,6 +21,6 @@ class KNN(Experiment):
         'predict__n_neighbors': np.arange(1, 30, 3),
         'predict__weights': ['uniform','distance']
       }
-      learning_curve_train_sizes = np.arange(0.01, 1.0, 0.025)
+      learning_curve_train_sizes = np.arange(0.005, 1.0, 0.025)
       super().__init__(attributes, classifications, dataset, 'knn', pipeline, params, 
         learning_curve_train_sizes, True)
