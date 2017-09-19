@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV, learning_curve
 from sklearn.metrics import make_scorer, accuracy_score
 from sklearn.utils import compute_sample_weight
+from time import process_time
 logger = logging.getLogger(__name__)
 
 def balanced_accuracy(truth,pred):
@@ -21,7 +22,9 @@ scorer = make_scorer(balanced_accuracy)
 class Experiment:
 
     def __init__(self, attributes, classifications,
-      dataset, algorithm, pipeline, params, learning_curve_train_sizes):
+      dataset, algorithm, pipeline, params, 
+      learning_curve_train_sizes,
+      timing_curve=False):
         ''' Constructor
         '''
         # what data are we looking at
@@ -35,6 +38,7 @@ class Experiment:
         self._learning_curve_train_sizes = learning_curve_train_sizes
         self._verbose = 0
         self._random = 10
+        self._timing_curve = timing_curve
         # force a seed for the experiment
         np.random.seed(self._random)
 
@@ -53,18 +57,21 @@ class Experiment:
           refit=True, verbose=self._verbose)
         logger.info('Searching params')
         cv.fit(x_train, y_train)
+        cv.set_params(predict__metric = 'manhattan', predict__n_neighbors= 4, predict__weights = 'uniform')
         cv_all = pd.DataFrame(cv.cv_results_)
-        csv_str = '{}-{}'.format(self._dataset, self._algorithm)
-        cv_all.to_csv('./results/{}-cv.csv'.format(csv_str), index=False)
+        csv_str = '{}/{}/'.format(self._dataset, self._algorithm)
+        cv_all.to_csv('./results/{}/cv.csv'.format(csv_str), index=False)
         self._basic_accuracy(cv, x_test, y_test, csv_str)
         self._learning_curve(cv, x_train, y_train, csv_str)
+        if self._timing_curve:
+            self._create_timing_curve(cv.best_estimator_, csv_str)
 
     def _basic_accuracy(self, cv, x_test, y_test, csv_str):
         # simple best fit against test data
         logger.info('Writing out basic result')
         results_df = pd.DataFrame(columns=['best_estimator', 'best_score', 'best_params', 'test_score'],
           data=[[cv.best_estimator_, cv.best_score_, cv.best_params_, cv.score(x_test, y_test)]])
-        results_df.to_csv('./results/{}-basic.csv'.format(csv_str), index=False)
+        results_df.to_csv('./results/{}/basic.csv'.format(csv_str), index=False)
         
     def _learning_curve(self, cv, x_train, y_train, csv_str):
         # learning curve
@@ -73,21 +80,52 @@ class Experiment:
           cv=self._cv, train_sizes = self._learning_curve_train_sizes, verbose=self._verbose, 
           scoring=scorer, n_jobs=4)
         train_scores = pd.DataFrame(index = accuracy_learning_curve[0], data = accuracy_learning_curve[1])
-        train_scores.to_csv('./results/{}-lc-train.csv'.format(csv_str), index=False)
+        train_scores.to_csv('./results/{}/lc-train.csv'.format(csv_str), index=False)
         test_scores = pd.DataFrame(index = accuracy_learning_curve[0], data = accuracy_learning_curve[2])
-        test_scores.to_csv('./results/{}-lc-test.csv'.format(csv_str), index=False)
+        test_scores.to_csv('./results/{}/lc-test.csv'.format(csv_str), index=False)
         logger.info('Saving learning curves')
         plt.figure(1)
-        plt.plot(self._learning_curve_train_sizes, train_scores, marker='o', color='blue',
-          label='Training Score')
-        plt.plot(self._learning_curve_train_sizes, test_scores, marker='o', color='green',
-          label='Cross-Validation Score')
+        plt.plot(self._learning_curve_train_sizes, np.mean(train_scores, axis=1), 
+          marker='o', color='blue', label='Training Score')
+        plt.plot(self._learning_curve_train_sizes, np.mean(test_scores, axis=1), 
+          marker='o', color='green', label='Cross-Validation Score')
         plt.legend()
         plt.grid(linestyle='dotted')
-        plt.xlabel('Training Examples Percentage')
+        plt.xlabel('Total Data Used for Training as a Percentage')
         plt.ylabel('Accuracy')
-        plt.savefig('./results/{}-learning-curve.png'.format(csv_str))
-    
+        plt.savefig('./results/{}/learning-curve.png'.format(csv_str))
+
+    def _create_timing_curve(self, estimator, csv_str):
+        ''' Create a timing curve
+        '''
+        logger.info('Creating timing curve')
+        training_data_sizes = np.arange(0.1, 1.0, 0.1)
+        train_time = []
+        predict_time = []
+        final_df = []
+        for i, train_data in enumerate(training_data_sizes):
+            x_train, x_test, y_train, _ = self._split_train_test(1 - train_data)
+            start = process_time()
+            estimator.fit(x_train, y_train)
+            end_train = process_time()
+            estimator.predict(x_test)
+            end_predict = process_time()
+            train_time.append(end_train - start)
+            predict_time.append(end_predict - end_train)
+            final_df.append([train_data, train_time[i], predict_time[i]])
+        plt.figure(2)
+        plt.plot(training_data_sizes, train_time, 
+          marker='o', color='blue', label='Training')
+        plt.plot(training_data_sizes, predict_time, 
+          marker='o', color='green', label='Predicting')
+        plt.legend()
+        plt.grid(linestyle='dotted')
+        plt.xlabel('Total Data Used for Training as a Percentage')
+        plt.ylabel('Time in Miliseconds')
+        plt.savefig('./results/{}/timing-curve.png'.format(csv_str))
+        time_csv = pd.DataFrame(data = final_df, columns=['Training Percentage', 'Train Time', 'Test Time'])
+        time_csv.to_csv('./results/{}/time.csv'.format(csv_str), index=False)
+
     def _split_train_test(self, test_size=0.3):
         '''Split up the data correctly according to a ratio
 

@@ -7,6 +7,7 @@ import clean
 from knn import KNN
 import logging
 import pandas as pd
+import os
 logging.basicConfig(level=logging.INFO)
 
 CLASSIFIERS = {
@@ -20,19 +21,23 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(title='subcommands', dest='command')
     cleaner_parser = subparsers.add_parser('clean', help='Clean the stats from original to final and show me information')
     knn_parser = subparsers.add_parser('knn', help='run k-nearest neighbors')
-    knn_parser.add_argument('-n', '--number', type=int, help='Amount of neighbors')
     args = parser.parse_args()
 
     # print something out!
     if not args.command:
         parser.print_help()
-
+    
     log = logging.getLogger(__name__)
     command = args.command
     # clean is a one off
     if command == 'clean':
         log.info('Cleaning datasets')  
         clean.create_final_datasets()
+
+    path = './results/{}/{}'.format(args.dataset, command)
+    if not os.path.exists(path):
+        log.info('Making results directory')
+        os.makedirs(path)
     
     if command != 'clean':
         if args.dataset == 'wine':

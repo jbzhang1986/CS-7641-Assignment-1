@@ -23,11 +23,9 @@ class KNN(Experiment):
         'predict__n_neighbors': np.arange(1, 30, 3),
         'predict__weights': ['uniform','distance']
       }
+      #if dataset == 'wine':
       learning_curve_train_sizes = np.arange(0.005, 1.0, 0.025)
+      #else:
+      #    learning_curve_train_sizes = np.arange(0.01, 1.0, 0.025)
       super().__init__(attributes, classifications, dataset, 'knn', pipeline, params, 
-        learning_curve_train_sizes)
-
-  def run(self):
-      ''' Run the experiment
-      '''
-      super().run()
+        learning_curve_train_sizes, True)
