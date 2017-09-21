@@ -27,7 +27,7 @@ class Experiment:
       dataset, algorithm, pipeline, params, 
       learning_curve_train_sizes,
       timing_curve=False,
-      verbose = 0,
+      verbose = 1,
       iteration_curve=False):
         ''' Constructor
         '''
@@ -111,12 +111,13 @@ class Experiment:
         train_time = []
         predict_time = []
         final_df = []
+        best_estimator = estimator.best_estimator_
         for i, train_data in enumerate(training_data_sizes):
             x_train, x_test, y_train, _ = self._split_train_test(1 - train_data)
             start = process_time()
-            estimator.fit(x_train, y_train)
+            best_estimator.fit(x_train, y_train)
             end_train = process_time()
-            estimator.predict(x_test)
+            best_estimator.predict(x_test)
             end_predict = process_time()
             train_time.append(end_train - start)
             predict_time.append(end_predict - end_train)
@@ -129,7 +130,7 @@ class Experiment:
         plt.legend()
         plt.grid(linestyle='dotted')
         plt.xlabel('Total Data Used for Training as a Percentage')
-        plt.ylabel('Time in Miliseconds')
+        plt.ylabel('Time in Seconds')
         plt.savefig('./results/{}/timing-curve.png'.format(csv_str))
         time_csv = pd.DataFrame(data = final_df, columns=['Training Percentage', 'Train Time', 'Test Time'])
         time_csv.to_csv('./results/{}/time.csv'.format(csv_str), index=False)
@@ -138,7 +139,7 @@ class Experiment:
         '''Create an iteration accuracy curve
         '''
         logger.info('Creating iteration curve')
-        iterations = np.arange(0, 5000, 250)
+        iterations = np.arange(1, 5000, 250)
         train_iter = []
         predict_iter = []
         final_df = []

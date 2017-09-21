@@ -6,6 +6,7 @@ import argparse
 import clean
 from knn import KNN
 from svm import SVM
+from ann import ANN
 import logging
 import pandas as pd
 import os
@@ -13,7 +14,8 @@ logging.basicConfig(level=logging.INFO)
 
 CLASSIFIERS = {
   'knn': KNN,
-  'svm': SVM
+  'svm': SVM,
+  'ann': ANN
 }
 
 if __name__ == '__main__':
@@ -24,6 +26,7 @@ if __name__ == '__main__':
     cleaner_parser = subparsers.add_parser('clean', help='Clean the stats from original to final and show me information')
     knn_parser = subparsers.add_parser('knn', help='Run k-nearest neighbors')
     svm_parser = subparsers.add_parser('svm', help='Run Support Vector Machines')
+    ann_parser = subparsers.add_parser('ann', help='Run neural networks')
     args = parser.parse_args()
 
     # print something out!

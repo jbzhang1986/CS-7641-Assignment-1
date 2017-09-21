@@ -2,7 +2,6 @@
 
 K-nearest neighbors
 '''
-import pandas as pd
 import logging 
 import numpy as np
 from experiment import Experiment
