@@ -7,7 +7,7 @@ import numpy as np
 from experiment import Experiment
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 logger = logging.getLogger(__name__)
 
 class SVM(Experiment):
@@ -15,12 +15,17 @@ class SVM(Experiment):
   def __init__(self, attributes, classifications, dataset, **kwargs):
       ''' Construct the object
       '''
-      pipeline = Pipeline([('scale', StandardScaler()), ('predict', KNeighborsClassifier())])
+      pipeline = Pipeline([('scale', StandardScaler()), ('predict', SVC())])
       params = {
-        'predict__metric':['manhattan','euclidean','chebyshev'],
-        'predict__n_neighbors': np.arange(1, 30, 3),
-        'predict__weights': ['uniform','distance']
+        'predict__kernel': ['linear', 'poly', 'rbf'],
+        'predict__C': 10.0 ** np.arange(-3, 8), 
+        # penalize distance, low = use all, high = use close b/c distance to decision boundry to penalized
+        'predict__gamma': 10. ** np.arange(-5, 4),
+        'predict__cache_size': [200],
+        'predict__max_iter': [3000],
+        'predict__degree': [2, 3],
+        'predict__coef0': [0, 1]
       }
-      learning_curve_train_sizes = np.arange(0.005, 1.0, 0.025)
-      super().__init__(attributes, classifications, dataset, 'knn', pipeline, params, 
-        learning_curve_train_sizes, True)
+      learning_curve_train_sizes = np.arange(0.05, 1.0, 0.05)
+      super().__init__(attributes, classifications, dataset, 'svm', pipeline, params, 
+        learning_curve_train_sizes, True, verbose=0, iteration_curve=True)

@@ -11,7 +11,10 @@ from sklearn.model_selection import GridSearchCV, learning_curve
 from sklearn.metrics import make_scorer, accuracy_score
 from sklearn.utils import compute_sample_weight
 from time import process_time
+from sklearn.model_selection import ShuffleSplit
+from sklearn.model_selection import cross_val_score
 logger = logging.getLogger(__name__)
+import warnings
 
 def balanced_accuracy(truth,pred):
     wts = compute_sample_weight('balanced', truth)
@@ -23,7 +26,9 @@ class Experiment:
     def __init__(self, attributes, classifications,
       dataset, algorithm, pipeline, params, 
       learning_curve_train_sizes,
-      timing_curve=False):
+      timing_curve=False,
+      verbose = 0,
+      iteration_curve=False):
         ''' Constructor
         '''
         # what data are we looking at
@@ -31,13 +36,14 @@ class Experiment:
         self._classifications = classifications
         self._dataset = dataset
         self._algorithm = algorithm
-        self._cv = 10
         self._pipeline = pipeline
         self._params = params
         self._learning_curve_train_sizes = learning_curve_train_sizes
-        self._verbose = 0
+        self._verbose = verbose
         self._random = 10
+        self._cv = ShuffleSplit(random_state=self._random)
         self._timing_curve = timing_curve
+        self._iteration_curve = iteration_curve
         # force a seed for the experiment
         np.random.seed(self._random)
 
@@ -51,18 +57,22 @@ class Experiment:
         model_params = self._params
         # cross validation -> best estimator
         # refit is true ...
-        cv = GridSearchCV(experiment_pipe,
-          n_jobs=4, param_grid=model_params, cv=self._cv, scoring=scorer,
-          refit=True, verbose=self._verbose)
-        logger.info('Searching params')
-        cv.fit(x_train, y_train)
-        cv_all = pd.DataFrame(cv.cv_results_)
-        csv_str = '{}/{}/'.format(self._dataset, self._algorithm)
-        cv_all.to_csv('./results/{}/cv.csv'.format(csv_str), index=False)
-        self._basic_accuracy(cv, x_test, y_test, csv_str)
-        self._learning_curve(cv, x_train, y_train, csv_str)
-        if self._timing_curve:
-            self._create_timing_curve(cv.best_estimator_, csv_str)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cv = GridSearchCV(experiment_pipe,
+              n_jobs=4, param_grid=model_params, cv=self._cv, scoring=scorer,
+              refit=True, verbose=self._verbose)
+            logger.info('Searching params')
+            cv.fit(x_train, y_train)
+            cv_all = pd.DataFrame(cv.cv_results_)
+            csv_str = '{}/{}/'.format(self._dataset, self._algorithm)
+            cv_all.to_csv('./results/{}/cv.csv'.format(csv_str), index=False)
+            self._basic_accuracy(cv, x_test, y_test, csv_str)
+            self._learning_curve(cv, x_train, y_train, csv_str)
+            if self._timing_curve:
+                self._create_timing_curve(cv, csv_str)
+            if self._iteration_curve:
+                self._create_iteration_curve(cv, csv_str, x_train, x_test, y_train, y_test)
 
     def _basic_accuracy(self, cv, x_test, y_test, csv_str):
         # simple best fit against test data
@@ -123,6 +133,34 @@ class Experiment:
         plt.savefig('./results/{}/timing-curve.png'.format(csv_str))
         time_csv = pd.DataFrame(data = final_df, columns=['Training Percentage', 'Train Time', 'Test Time'])
         time_csv.to_csv('./results/{}/time.csv'.format(csv_str), index=False)
+
+    def _create_iteration_curve(self, estimator, csv_str, x_train, x_test, y_train, y_test):
+        '''Create an iteration accuracy curve
+        '''
+        logger.info('Creating iteration curve')
+        iterations = np.arange(0, 5000, 250)
+        train_iter = []
+        predict_iter = []
+        final_df = []
+        best_estimator = estimator.best_estimator_
+        for i, iteration in enumerate(iterations):
+            best_estimator.set_params(**{ 'predict__max_iter': iteration })
+            best_estimator.fit(x_train, y_train)
+            train_iter.append(np.mean(cross_val_score(best_estimator, x_train, y_train, scoring=scorer, cv=self._cv)))
+            predict_iter.append(np.mean(cross_val_score(best_estimator, x_test, y_test, scoring=scorer, cv=self._cv)))
+            final_df.append([iteration, train_iter[i], predict_iter[i]])
+        plt.figure(3)
+        plt.plot(iterations, train_iter, 
+          marker='o', color='blue', label='Train Score')
+        plt.plot(iterations, predict_iter, 
+          marker='o', color='green', label='Test Score')
+        plt.legend()
+        plt.grid(linestyle='dotted')
+        plt.xlabel('Iterations')
+        plt.ylabel('Accuracy')
+        plt.savefig('./results/{}/iteration-curve.png'.format(csv_str))
+        iter_csv = pd.DataFrame(data = final_df, columns=['Iterations', 'Train Accuracy', 'Test Accuracy'])
+        iter_csv.to_csv('./results/{}/iteration.csv'.format(csv_str), index=False)
 
     def _split_train_test(self, test_size=0.3):
         '''Split up the data correctly according to a ratio
