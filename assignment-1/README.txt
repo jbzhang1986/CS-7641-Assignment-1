@@ -4,7 +4,7 @@ This package should contain all code and data necessary to run all of the expier
 
 ## Installation
 
-1. Install Conda
+1. Install Conda, a CLI tool
 
    https://conda.io/docs/user-guide/install/index.html
 
