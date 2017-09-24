@@ -11,8 +11,7 @@ from sklearn.model_selection import GridSearchCV, learning_curve
 from sklearn.metrics import make_scorer, accuracy_score
 from sklearn.utils import compute_sample_weight
 from time import process_time
-from sklearn.model_selection import ShuffleSplit
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import ShuffleSplit, cross_val_score
 logger = logging.getLogger(__name__)
 import warnings
 
