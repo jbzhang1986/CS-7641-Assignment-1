@@ -30,16 +30,22 @@ class Boosting(Experiment):
       '''
       if dataset == 'wine':
           basic_tree = PrunedDecisionTreeClassifier(criterion='entropy', class_weight='balanced', random_state=10)
+          params = {
+            'predict__n_estimators': np.power(2, np.arange(1, 8)),
+            'predict__base_estimator__alpha': np.append(np.arange(0.99, 1.02, 0.001), 0)
+          }
       else:
           basic_tree = PrunedDecisionTreeClassifier(criterion='gini', class_weight='balanced', random_state=10)
+          params = {
+            'predict__n_estimators': np.power(2, np.arange(1, 8)),
+            # adaboost crashes with pruning ???
+            'predict__base_estimator__alpha': [0] # np.append(np.arange(0.99, 1.01, 0.01), 0)
+          }
 
       learning_curve_train_sizes = np.arange(0.01, 1.0, 0.025)
       pipeline = Pipeline([('scale', StandardScaler()), 
         ('predict', AdaBoostClassifier(algorithm='SAMME', base_estimator=basic_tree, random_state=10))])
-      params = {
-        'predict__n_estimators': np.power(2, np.arange(1, 8)),
-        'predict__base_estimator__alpha': np.append(np.arange(0.99, 1.03, 0.001), 0)
-      }
+      
       super().__init__(attributes, classifications, dataset, 'boosting', pipeline, params, 
         learning_curve_train_sizes, True, verbose=1, iteration_curve=False)
 
