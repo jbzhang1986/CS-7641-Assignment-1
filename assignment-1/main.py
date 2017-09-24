@@ -8,6 +8,7 @@ from knn import KNN
 from svm import SVM
 from ann import ANN
 from dt import DT
+from boosting import Boosting
 import logging
 import pandas as pd
 import os
@@ -18,7 +19,8 @@ CLASSIFIERS = {
   'knn': KNN,
   'svm': SVM,
   'ann': ANN,
-  'dt': DT
+  'dt': DT,
+  'boosting': Boosting
 }
 
 def load_dataset(dataset='wine'):
@@ -49,6 +51,7 @@ if __name__ == '__main__':
     svm_parser = subparsers.add_parser('svm', help='Run Support Vector Machines')
     ann_parser = subparsers.add_parser('ann', help='Run neural networks')
     dt_parser = subparsers.add_parser('dt', help='Run decision trees')
+    boosting_parser = subparsers.add_parser('boosting', help='Run boosting')
     args = parser.parse_args()
 
     # print something out!

@@ -2,6 +2,7 @@
 
 Decision Trees
 '''
+import matplotlib.pyplot as plt
 import logging 
 import numpy as np
 import pandas as pd
@@ -18,28 +19,42 @@ class DT(Experiment):
       ''' Construct the object
       '''
       pipeline = Pipeline([('scale', StandardScaler()), ('predict', PrunedDecisionTreeClassifier())])
+      self._alphas = np.append(np.arange(0.99, 1.03, 0.001), 0)
       params = {
-        'predict__criterion':['gini','entropy'],
-        'predict__alpha': np.arange(0, 2.1, 0.1),
+        'predict__criterion': ['gini','entropy'],
+        'predict__alpha': self._alphas,
         'predict__class_weight': ['balanced']
       }
       learning_curve_train_sizes = np.arange(0.01, 1.0, 0.025)
       super().__init__(attributes, classifications, dataset, 'dt', pipeline, params, 
         learning_curve_train_sizes, True, verbose=1)
 
-  def DTpruningVSnodes(clf,alphas,trgX,trgY,dataset):
-      '''Dump table of pruning alpha vs. # of internal nodes'''
-      out = {}
-      for a in alphas:
-          clf.set_params(**{'DT__alpha':a})
-          clf.fit(trgX,trgY)
-          out[a]=clf.steps[-1][-1].numNodes()
-          print(dataset,a)
-      out = pd.Series(out)
-      out.index.name='alpha'
-      out.name = 'Number of Internal Nodes'
-      out.to_csv('./output/DT_{}_nodecounts.csv'.format(dataset))
-
+  def run(self):
+      '''Run the expierment, but we need to check the prine size
+      '''
+      cv_best = super().run()
+      logger.info('Writing out nodes')
+      x_train, _, y_train, _ = self._split_train_test()
+      clf = cv_best.best_estimator_
+      rows = []
+      nodes = []
+      # alpha vs internal nodes
+      for alpha in self._alphas[:-1]:
+          clf.set_params(**{'predict__alpha': alpha })
+          clf.fit(x_train, y_train)
+          node_count = clf.steps[-1][-1].num_nodes()
+          rows.append([alpha, node_count])
+          nodes.append(node_count)
+      out = pd.DataFrame(columns=['alpha', 'nodes'], data=rows)
+      csv_str = '{}/{}'.format(self._dataset, self._algorithm)
+      out.to_csv('./results/{}/node-count.csv'.format(csv_str), index=False)
+      plt.figure(4)
+      plt.plot(self._alphas[:-1], nodes, marker='o', color='blue')
+      plt.grid(linestyle='dotted')
+      plt.xlabel('Weighted Accuracy of Pruned vs Non-Prune Tree')
+      plt.ylabel('Nodes')
+      plt.savefig('./results/{}/node-count.png'.format(csv_str))
+      
 class PrunedDecisionTreeClassifier(DecisionTreeClassifier):        
     def __init__(self,
                criterion='gini',
@@ -103,7 +118,7 @@ class PrunedDecisionTreeClassifier(DecisionTreeClassifier):
             # what happens if i remove?
             tree.children_left[candidate] = tree.children_right[candidate] = -1            
             score = self.score(self.valX, self.valY)
-            if score >= self.alpha * bestScore:
+            if self.alpha * score >= bestScore:
                 bestScore = score                
                 self.remove_subtree(candidate)
             else:

@@ -73,6 +73,7 @@ class Experiment:
                 self._create_timing_curve(cv, csv_str)
             if self._iteration_curve:
                 self._create_iteration_curve(cv, csv_str, x_train, x_test, y_train, y_test)
+            return cv
 
     def _basic_accuracy(self, cv, x_test, y_test, csv_str):
         # simple best fit against test data
